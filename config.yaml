@@ -1,0 +1,20 @@
+riot:
+  region: "la1"  #LAN
+  routing_region: "americas"
+  queue: "RANKED_SOLO_5x5" #flex also availible but not recommended
+  tier: "DIAMOND"
+  division: "I"  #Range from I to IV
+  page: 1
+
+matches:
+  matchtype: "ranked"
+  queueid: 420 #Ranked ID
+  start: 15
+  count: 45
+  sleep_seconds: 1.7
+
+paths:
+  ladder_csv: "data/interim/ladder_apex.csv"
+  sample_csv: "data/interim/sample_apex.csv"
+  enriched_csv: "data/processed/sample_apex_enriched.csv"
+  database: "data/modular3.db"
