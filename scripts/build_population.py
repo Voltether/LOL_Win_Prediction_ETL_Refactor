@@ -4,10 +4,9 @@ import os
 from dotenv import load_dotenv
 import time
 from pathlib import Path
-load_dotenv()
 
 
-from src.riot_api import get_gm_ladder, get_chall_ladder, get_df_data, get_matchids, enrich_with_objectives
+from src.data.riot_api import get_gm_ladder, get_chall_ladder, get_df_data, get_matchids, enrich_with_objectives
 from src.config import load_config, load_api_key, get_paths
 
 config = load_config()
@@ -25,8 +24,8 @@ sleep_seconds = riot_config["sleep_seconds"]
 no_apex_ranks = ('IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND')
 apex_ranks = ('MASTER', 'GRAND_MASTER', 'CHALLENGER')
 
-gm_ladder = get_gm_ladder(api_key=os.getenv(RIOT_API_KEY))
-ch_ladder = get_chall_ladder(api_key=os.getenv(RIOT_API_KEY))
+gm_ladder = get_gm_ladder(api_key=load_api_key)
+ch_ladder = get_chall_ladder(api_key=load_api_key)
 
 apex_ladder = ch_ladder + gm_ladder
 
@@ -57,7 +56,7 @@ for summ in ladder_list:
         continue
 
     # csv temporal
-    data_sample = get_df_data(history=new_matches, puuid=summ, api_key=api_key, csv_path="temp.csv")
+    data_sample = get_df_data(history=new_matches, puuid=summ, api_key=api_key, csv_path=paths["temp_matches"])
     
     # no repetidos
     all_data.extend(data_sample)
@@ -68,8 +67,8 @@ for summ in ladder_list:
 df_sample = pd.DataFrame(all_data)
 df_sample.drop_duplicates(subset=["match_id"], inplace=True)
 
-df_sample.to_csv(INTERIM_DIR / "sample_apex_csv.csv", index=False)
-df = pd.read_csv(INTERIM_DIR / "sample_apex_csv.csv")
+df_sample.to_csv(paths["sample_matches"], index=False)
+df = pd.read_csv(paths["sample_matches"])
 
 df_enriched = enrich_with_objectives(df = df, api_key=api_key)
-df_enriched.to_csv(PROCESSED_DIR / 'sample_apex_enriched_csv.csv', index = False)
+df_enriched.to_csv(paths['sample_enriched'], index = False)
