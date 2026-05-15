@@ -14,7 +14,12 @@ matches:
   sleep_seconds: 1.7
 
 paths:
-  ladder_csv: "data/interim/ladder_apex.csv"
-  sample_csv: "data/interim/sample_apex.csv"
-  enriched_csv: "data/processed/sample_apex_enriched.csv"
-  database: "data/modular3.db"
+  interim_dir: "data/interim"
+  processed_dir: "data/processed"
+  database: "data/prediction.db"
+
+files:
+  ladder_population: "ladder_population.csv"
+  sample_matches: "sample_apex.csv"
+  sample_enriched: "sample_apex_enriched.csv"
+  temp_matches: "temp_matches.csv"

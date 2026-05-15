@@ -32,4 +32,6 @@ def get_paths(config: dict) -> dict:
         "ladder_population": interim_dir / config["files"]["ladder_population"],
         "sample_matches": interim_dir / config["files"]["sample_matches"],
         "sample_enriched": processed_dir / config["files"]["sample_enriched"],
+        "temp_matches": interim_dir / config["files"]["temp_matches"],
+        "database": Path(config["paths"]["database"]),
     }
