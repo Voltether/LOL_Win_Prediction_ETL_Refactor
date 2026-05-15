@@ -1,3 +1,5 @@
+import requests
+
 def get_chall_ladder(api_key):
     """
     Devuelve una lista con los PUUIDs de Challenger (LAN, ranked solo 5x5).
@@ -144,6 +146,24 @@ def get_winner(match_data):
     for team in match_data['info']['teams']:
         if team['win']:
             return team['teamId']
+        
+
+def fetch_match_and_timeline(match_id, api_key):
+    """
+    Descarga match_data y timeline_data desde Riot API.
+    """
+    base_url = "https://americas.api.riotgames.com/lol/match/v5/matches"
+
+    match_url = f"{base_url}/{match_id}?api_key={api_key}"
+    timeline_url = f"{base_url}/{match_id}/timeline?api_key={api_key}"
+
+    match_response = requests.get(match_url)
+    timeline_response = requests.get(timeline_url)
+
+    match_response.raise_for_status()
+    timeline_response.raise_for_status()
+
+    return match_response.json(), timeline_response.json()
         
 
 def get_df_data(history, puuid, api_key, csv_path):
