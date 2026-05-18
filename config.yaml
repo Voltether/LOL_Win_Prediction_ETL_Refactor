@@ -10,7 +10,7 @@ matches:
   matchtype: "ranked"
   queueid: 420 #Ranked ID
   start: 1
-  count: 11
+  count: 5
   sleep_seconds: 1.5
 
 paths:

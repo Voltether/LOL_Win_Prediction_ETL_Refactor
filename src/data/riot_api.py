@@ -171,95 +171,49 @@ def fetch_match_and_timeline(match_id, api_key):
 
 def get_df_data(history, puuid, api_key, csv_path, sleep_seconds=1):
     """
-    Procesa una lista de match_ids (history), obtiene las métricas al min 10
-    y devuelve un DataFrame. También actualiza/crea un CSV evitando duplicados.
+    Procesa una lista de match_ids, obtiene métricas al min 10
+    y devuelve un DataFrame enriquecido.
     """
 
     if os.path.exists(csv_path):
         df_old = pd.read_csv(csv_path)
         data = df_old.to_dict(orient="records")
-        existing_match_ids = {row["match_id"] for row in data}
+        existing_match_ids = {str(row["match_id"]) for row in data}
     else:
         data = []
         existing_match_ids = set()
 
     for match_id in history:
+        match_id = str(match_id)
+
         if match_id in existing_match_ids:
             print(f"[{match_id}] Ya estaba registrado, se omite.")
             continue
 
         try:
-            # URLs
-            match_url = f"https://americas.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key={api_key}"
-            timeline_url = f"https://americas.api.riotgames.com/lol/match/v5/matches/{match_id}/timeline?api_key={api_key}"
+            match_data, timeline_data = fetch_match_and_timeline(
+                match_id=match_id,
+                api_key=api_key
+            )
 
-            # Requests
-            match_data = requests.get(match_url).json()
-            timeline_data = requests.get(timeline_url).json()
+            row = build_match_row(
+                match_id=match_id,
+                match_data=match_data,
+                timeline_data=timeline_data,
+                puuid=puuid
+            )
 
-            # Info del jugador
-            participant_id, team_id = get_participant_info(match_data, puuid, mode = 'both')
-            if not participant_id:
-                print(f"[{match_id}] PUUID no encontrado.")
-                continue
+            data.append(row)
+            existing_match_ids.add(match_id)
 
-            my_team = get_participant_info(match_data, puuid, mode = 'team')
+            print(f"[{match_id}] Procesado correctamente.")
 
-            # Determinar victoria
-            player_info = next((p for p in match_data["info"]["participants"] if p["puuid"] == puuid), None)
-            if not player_info:
-                print(f"[{match_id}] No se encontró info del jugador.")
-                continue
-            my_team_win = player_info["win"]
-
-            # Oro por equipo
-            gold_info = get_team_gold_difference(timeline_data, my_team)
-            if not gold_info:
-                print(f"[{match_id}] Error al obtener oro de equipos.")
-                continue
-
-            # Kills por equipo
-            kill_info = get_team_kills_at_10(timeline_data, my_team)
-            if not kill_info:
-                print(f"[{match_id}] Error al obtener kills")
-                continue
-
-            # Mi equipo
-            my_team_label = 100 if team_id == 100 else 200
-            my_team_was_ahead_kills = (team_id == 100 and kill_info['kill_diff'] > 0) or \
-                                      (team_id == 200 and kill_info['kill_diff'] < 0)
-            my_team_was_ahead_gold = (team_id == 100 and gold_info["leading_team"] == 1) or \
-                                     (team_id == 200 and gold_info["leading_team"] == 2)
-
-            # Ganador
-            winner = get_winner(match_data)
-
-            # Agregar info
-            data.append({
-                "match_id": match_id,
-                "my_team": my_team_label,
-                "team1_gold": gold_info["team1_gold"],
-                "team2_gold": gold_info["team2_gold"],
-                "gold_diff": gold_info["difference"],
-                "gold_leading_team": gold_info["leading_team_id"],
-                "my_team_ahead_gold": my_team_was_ahead_gold,
-                "team1_kills": kill_info['team1_kills'],
-                "team2_kills": kill_info['team2_kills'],
-                "kill_diff": kill_info['kill_diff'],
-                "kill_leading_team": kill_info['kill_leading_team'],
-                "my_team_ahead_kills": my_team_was_ahead_kills,
-                "my_team_win": my_team_win,
-                "winner": winner
-            })
-
-            time.sleep(sleep_seconds)  
+            time.sleep(sleep_seconds)
 
         except Exception as e:
             print(f"[{match_id}] Error: {e}")
 
-    df = pd.DataFrame(data)
-
-    return df
+    return pd.DataFrame(data)
 
 
 def get_tower_fb(timeline_data):
@@ -306,6 +260,16 @@ def get_herald_fb(timeline_data):
         print(f"Error en get_herald_fb: {e}")
     return None
 
+def get_objective_features(timeline_data):
+    """
+    Extrae objetivos tempranos desde el timeline ya descargado.
+    No hace requests.
+    """
+    return {
+        "tower_fb": get_tower_fb(timeline_data),
+        "drake_fb": get_drake_fb(timeline_data),
+        "herald_fb": get_herald_fb(timeline_data),
+    }
 
 def enrich_with_objectives(df, api_key):
     """
@@ -361,3 +325,74 @@ def enrich_with_objectives(df, api_key):
 
     return df_final
 
+
+def build_match_row(match_id, match_data, timeline_data, puuid):
+    """
+    Construye una fila completa de features para una partida.
+    Usa match_data y timeline_data ya descargados.
+    """
+
+    participant_id, team_id = get_participant_info(
+        match_data,
+        puuid,
+        mode="both"
+    )
+
+    if not participant_id:
+        raise ValueError("PUUID no encontrado.")
+
+    player_info = next(
+        (p for p in match_data["info"]["participants"] if p["puuid"] == puuid),
+        None
+    )
+
+    if not player_info:
+        raise ValueError("No se encontró información del jugador.")
+
+    my_team_win = player_info["win"]
+
+    gold_info = get_team_gold_difference(timeline_data, team_id)
+    if not gold_info:
+        raise ValueError("Error al obtener oro de equipos.")
+
+    kill_info = get_team_kills_at_10(timeline_data, team_id)
+    if not kill_info:
+        raise ValueError("Error al obtener kills.")
+
+    my_team_ahead_kills = (
+        (team_id == 100 and kill_info["kill_diff"] > 0)
+        or
+        (team_id == 200 and kill_info["kill_diff"] < 0)
+    )
+
+    my_team_ahead_gold = (
+        (team_id == 100 and gold_info["leading_team_id"] == 100)
+        or
+        (team_id == 200 and gold_info["leading_team_id"] == 200)
+    )
+
+    winner = get_winner(match_data)
+
+    return {
+        "match_id": match_id,
+        "my_team": team_id,
+
+        "team1_gold": gold_info["team1_gold"],
+        "team2_gold": gold_info["team2_gold"],
+        "gold_diff": gold_info["difference"],
+        "gold_leading_team": gold_info["leading_team_id"],
+        "my_team_ahead_gold": my_team_ahead_gold,
+
+        "team1_kills": kill_info["team1_kills"],
+        "team2_kills": kill_info["team2_kills"],
+        "kill_diff": kill_info["kill_diff"],
+        "kill_leading_team": kill_info["kill_leading_team"],
+        "my_team_ahead_kills": my_team_ahead_kills,
+
+        "tower_fb": get_tower_fb(timeline_data),
+        "drake_fb": get_drake_fb(timeline_data),
+        "herald_fb": get_herald_fb(timeline_data),
+
+        "my_team_win": my_team_win,
+        "winner": winner,
+    }

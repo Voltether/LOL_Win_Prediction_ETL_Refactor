@@ -1,3 +1,6 @@
+import pandas as pd
+import time
+
 from src.data.storage import load_existing_data
 from src.data.riot_api import fetch_match_and_timeline
 from src.features.match_features import build_match_row
