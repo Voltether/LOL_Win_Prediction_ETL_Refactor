@@ -1,4 +1,7 @@
 import requests
+import pandas as pd
+import time
+import os
 
 def get_chall_ladder(api_key):
     """
@@ -166,7 +169,7 @@ def fetch_match_and_timeline(match_id, api_key):
     return match_response.json(), timeline_response.json()
         
 
-def get_df_data(history, puuid, api_key, csv_path):
+def get_df_data(history, puuid, api_key, csv_path, sleep_seconds=1):
     """
     Procesa una lista de match_ids (history), obtiene las métricas al min 10
     y devuelve un DataFrame. También actualiza/crea un CSV evitando duplicados.
@@ -249,12 +252,14 @@ def get_df_data(history, puuid, api_key, csv_path):
                 "winner": winner
             })
 
-            time.sleep(1)  
+            time.sleep(sleep_seconds)  
 
         except Exception as e:
             print(f"[{match_id}] Error: {e}")
 
-    return data
+    df = pd.DataFrame(data)
+
+    return df
 
 
 def get_tower_fb(timeline_data):

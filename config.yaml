@@ -9,14 +9,14 @@ riot:
 matches:
   matchtype: "ranked"
   queueid: 420 #Ranked ID
-  start: 15
-  count: 45
-  sleep_seconds: 1.7
+  start: 1
+  count: 11
+  sleep_seconds: 1.5
 
 paths:
   interim_dir: "data/interim"
   processed_dir: "data/processed"
-  database: "data/prediction.db"
+  database: "data/predictor.db"
 
 files:
   ladder_population: "ladder_population.csv"

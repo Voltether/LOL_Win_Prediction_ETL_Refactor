@@ -33,6 +33,43 @@ apex_ladder = ch_ladder + gm_ladder
 df_ladder = pd.DataFrame(data=apex_ladder, columns=["puuid_apex"])
 df_ladder.to_csv(paths["ladder_population"], index=False)
 
+
+# %%
+import requests
+import pandas as pd
+import os
+from dotenv import load_dotenv
+import time
+import sys
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.append(str(PROJECT_ROOT))
+
+
+
+from src.data.riot_api import get_gm_ladder, get_chall_ladder, get_df_data, get_matchids, enrich_with_objectives
+from src.config import load_config, load_api_key, get_paths
+
+config = load_config(PROJECT_ROOT / "config.yaml")
+api_key = load_api_key()
+paths = get_paths(config)
+
+riot_config = config["riot"]
+match_config = config["matches"]
+
+queueid = match_config["queueid"]
+matchtype = match_config["matchtype"]
+start = match_config["start"]
+count = match_config["count"]
+sleep_seconds = match_config["sleep_seconds"]
+
+no_apex_ranks = ('IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND')
+apex_ranks = ('MASTER', 'GRAND_MASTER', 'CHALLENGER')
+
+
+df_ladder = pd.read_csv(PROJECT_ROOT / "data/interim/ladder_population.csv")
+
 ladder_list = list(df_ladder["puuid_apex"])
 
 all_dfs = []
@@ -65,7 +102,7 @@ for summ in ladder_list:
     all_dfs.append(df_sample_player)
     seen_matches.update(new_matches)
     
-    time.sleep(1.7)
+    time.sleep(1.5)
 
 if not all_dfs:
     raise ValueError(
@@ -77,6 +114,10 @@ df_sample.drop_duplicates(subset=["match_id"], inplace=True)
 
 df_sample.to_csv(paths["sample_matches"], index=False)
 df = pd.read_csv(paths["sample_matches"])
+# %%
+
 
 df_enriched = enrich_with_objectives(df = df, api_key=api_key)
 df_enriched.to_csv(paths['sample_enriched'], index = False)
+
+# %%

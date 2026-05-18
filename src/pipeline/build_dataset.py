@@ -1,3 +1,7 @@
+from src.data.storage import load_existing_data
+from src.data.riot_api import fetch_match_and_timeline
+from src.features.match_features import build_match_row
+
 def get_df_data(history, puuid, api_key, csv_path, sleep_seconds=1):
     """
     Procesa una lista de match_ids, obtiene métricas al minuto 10
