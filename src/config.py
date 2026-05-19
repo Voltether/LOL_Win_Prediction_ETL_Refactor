@@ -22,16 +22,22 @@ def load_api_key() -> str:
 def get_paths(config: dict) -> dict:
     interim_dir = Path(config["paths"]["interim_dir"])
     processed_dir = Path(config["paths"]["processed_dir"])
+    database_dir = Path(config["paths"]["database_dir"])
 
     interim_dir.mkdir(parents=True, exist_ok=True)
     processed_dir.mkdir(parents=True, exist_ok=True)
+    database_dir.mkdir(parents=True, exist_ok=True)
 
     return {
         "interim_dir": interim_dir,
         "processed_dir": processed_dir,
+        "database_dir": database_dir,
+
         "ladder_population": interim_dir / config["files"]["ladder_population"],
         "sample_matches": interim_dir / config["files"]["sample_matches"],
         "sample_enriched": processed_dir / config["files"]["sample_enriched"],
         "temp_matches": interim_dir / config["files"]["temp_matches"],
-        "database": Path(config["paths"]["database"]),
+
+        "dfinfo_csv": Path(config["paths"]["dfinfo_csv"]),
+        "predictor_db": Path(config["paths"]["predictor_db"]),
     }

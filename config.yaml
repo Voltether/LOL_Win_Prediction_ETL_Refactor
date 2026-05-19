@@ -1,22 +1,27 @@
 riot:
-  region: "la1"  #LAN
+  region: "la1"
   routing_region: "americas"
-  queue: "RANKED_SOLO_5x5" #flex also availible but not recommended
+  queue: "RANKED_SOLO_5x5"
   tier: "DIAMOND"
-  division: "I"  #Range from I to IV
+  division: "I"
   page: 1
 
 matches:
   matchtype: "ranked"
-  queueid: 420 #Ranked ID
+  queueid: 420
   start: 1
   count: 5
   sleep_seconds: 1.5
 
 paths:
+  raw_dir: "data/raw"
   interim_dir: "data/interim"
   processed_dir: "data/processed"
-  database: "data/predictor.db"
+  database_dir: "data/database"
+  sample_matches_csv: "data/raw/sample_matches.csv"
+  sample_apex_enriched_csv: "data/processed/sample_apex_enriched_csv.csv"
+  dfinfo_csv: "data/processed/dfinfo_apex_enriched.csv"
+  predictor_db: "data/database/predictor.db"
 
 files:
   ladder_population: "ladder_population.csv"
