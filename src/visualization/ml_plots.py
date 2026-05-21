@@ -81,7 +81,12 @@ def plot_logistic_curve_vs_gold_diff(
         grid_df = pd.concat([ref] * len(grid), ignore_index=True)
         grid_df[feature_x] = grid
 
-        grid_scaled = scaler.transform(grid_df[features])
+        grid_scaled = pd.DataFrame(
+            scaler.transform(grid_df[features]),
+            columns=features,
+            index=grid_df.index,
+        )
+
         p = model.predict_proba(grid_scaled)[:, 1]
 
         w = model.coef_[0]

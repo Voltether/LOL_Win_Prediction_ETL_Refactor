@@ -80,7 +80,7 @@ def train_logreg(
 ) -> LogisticRegression:
     """Train the enriched logistic regression model."""
     model = LogisticRegression(
-        penalty="l1",
+        l1_ratio=1,
         C=0.1,
         solver="saga",
         random_state=random_state,

@@ -68,7 +68,7 @@ df_dataset.drop_duplicates(subset=["match_id"], inplace=True)
 
 df_dataset.to_csv(paths["sample_enriched"], index=False)
 
-conn = get_connection(paths["database"])
+conn = get_connection(paths["predictor_db"])
 create_tables(conn)
 save_matches_dataset(df_dataset, conn)
 conn.close()

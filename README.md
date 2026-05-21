@@ -77,7 +77,7 @@ project_root/
 ├── config.yaml
 ├── requirements.txt
 └── README.md
-
+```
 
 ```md   
 ## Current Status
