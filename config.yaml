@@ -19,12 +19,33 @@ paths:
   processed_dir: "data/processed"
   database_dir: "data/database"
   sample_matches_csv: "data/raw/sample_matches.csv"
-  sample_apex_enriched_csv: "data/processed/sample_apex_enriched_csv.csv"
+  sample_apex_enriched_csv: "data/processed/sample_apex_enriched.csv"
   dfinfo_csv: "data/processed/dfinfo_apex_enriched.csv"
   predictor_db: "data/database/predictor.db"
 
 files:
   ladder_population: "ladder_population.csv"
-  sample_matches: "sample_apex.csv"
+  sample_matches: "sample_matches.csv"
   sample_enriched: "sample_apex_enriched.csv"
   temp_matches: "temp_matches.csv"
+
+model:
+  target_column: "my_team_win"
+
+  features:
+    - "gold_diff"
+    - "kill_diff"
+    - "my_team_tower_fb"
+    - "my_team_drake_fb"
+    - "my_team_herald_fb"
+
+  test_size: 0.2
+  random_state: 42
+
+plots:
+  figures_dir: "reports/figures"
+
+artifacts:
+  model_dir: "models"
+  scaler_name: "scaler.pkl"
+  model_name: "logreg_model.pkl"
