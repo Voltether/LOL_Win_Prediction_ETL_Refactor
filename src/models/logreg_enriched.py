@@ -11,17 +11,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 
-FEATURES = [
-    "gold_diff",
-    "kill_diff",
-    "my_team_tower_fb",
-    "my_team_drake_fb",
-    "my_team_herald_fb",
-]
-
-TARGET = "my_team_win"
-
-
 @dataclass
 class LogRegArtifacts:
     model: LogisticRegression
@@ -29,10 +18,14 @@ class LogRegArtifacts:
     features: list[str]
 
 
-def load_training_data(csv_path: str | Path) -> pd.DataFrame:
-    """Load the enriched ML dataset and validate required columns."""
+def load_training_data(
+    csv_path: str | Path,
+    features: list[str],
+    target: str,
+) -> pd.DataFrame:
     df = pd.read_csv(csv_path)
-    required = FEATURES + [TARGET]
+
+    required = features + [target]
     missing = [col for col in required if col not in df.columns]
 
     if missing:
@@ -43,12 +36,13 @@ def load_training_data(csv_path: str | Path) -> pd.DataFrame:
 
 def split_and_scale(
     df: pd.DataFrame,
+    features: list[str],
+    target: str,
     test_size: float = 0.2,
     random_state: int = 42,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, StandardScaler]:
-    """Split train/test and fit the scaler only with train data."""
-    X = df[FEATURES]
-    y = df[TARGET]
+    X = df[features]
+    y = df[target]
 
     X_train, X_test, y_train, y_test = train_test_split(
         X,
@@ -59,14 +53,16 @@ def split_and_scale(
     )
 
     scaler = StandardScaler()
+
     X_train_scaled = pd.DataFrame(
         scaler.fit_transform(X_train),
-        columns=FEATURES,
+        columns=features,
         index=X_train.index,
     )
+
     X_test_scaled = pd.DataFrame(
         scaler.transform(X_test),
-        columns=FEATURES,
+        columns=features,
         index=X_test.index,
     )
 
@@ -78,7 +74,7 @@ def train_logreg(
     y_train: pd.Series,
     random_state: int = 42,
 ) -> LogisticRegression:
-    """Train the enriched logistic regression model."""
+    """Return core classification metrics."""
     model = LogisticRegression(
         l1_ratio=1,
         C=0.1,
@@ -87,6 +83,7 @@ def train_logreg(
         max_iter=10000,
         fit_intercept=True,
     )
+
     model.fit(X_train_scaled, y_train)
     return model
 
@@ -109,33 +106,33 @@ def evaluate_model(
     }
 
 
-def build_match_features(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Build the exact feature columns used by the model from a match-level dataframe.
-
-    Expected raw columns:
-    - gold_diff
-    - kill_diff
-    - my_team
-    - tower_fb
-    - drake_fb
-    - herald_fb
-    """
+def build_match_features(
+    df: pd.DataFrame,
+    features: list[str],
+) -> pd.DataFrame:
     df = df.copy()
 
-    for col in ["tower_fb", "drake_fb", "herald_fb"]:
-        if col not in df.columns:
-            raise ValueError(f"Missing column {col} to build my_team_{col}_fb.")
-        if "my_team" not in df.columns:
-            raise ValueError("Missing column my_team to build first-objective features.")
+    objective_cols = {
+        "tower_fb": "my_team_tower_fb",
+        "drake_fb": "my_team_drake_fb",
+        "herald_fb": "my_team_herald_fb",
+    }
 
-        df[f"my_team_{col}_fb"] = (df[col] == df["my_team"]).astype(int)
+    if "my_team" not in df.columns:
+        raise ValueError("Missing column my_team to build first-objective features.")
 
-    missing = [col for col in FEATURES if col not in df.columns]
+    for raw_col, feature_col in objective_cols.items():
+        if raw_col not in df.columns:
+            raise ValueError(f"Missing column {raw_col} to build {feature_col}.")
+
+        df[feature_col] = (df[raw_col] == df["my_team"]).astype(int)
+
+    missing = [col for col in features if col not in df.columns]
+
     if missing:
         raise ValueError(f"Missing model features: {missing}")
 
-    return df[FEATURES]
+    return df[features].copy()
 
 
 def predict_matches(
@@ -143,9 +140,17 @@ def predict_matches(
     artifacts: LogRegArtifacts,
     match_id_col: str = "match_id",
 ) -> pd.DataFrame:
-    """Predict win probability for already-collected match rows."""
-    X_pred = build_match_features(df_matches)
-    X_pred_scaled = artifacts.scaler.transform(X_pred)
+    X_pred = build_match_features(
+        df_matches,
+        artifacts.features,
+    )
+
+    X_pred_scaled = pd.DataFrame(
+        artifacts.scaler.transform(X_pred),
+        columns=artifacts.features,
+        index=X_pred.index,
+    )
+
     probs = artifacts.model.predict_proba(X_pred_scaled)[:, 1]
 
     result = pd.DataFrame({"prob_victoria": probs})

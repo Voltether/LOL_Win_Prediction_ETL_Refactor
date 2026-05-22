@@ -22,6 +22,7 @@ paths:
   sample_apex_enriched_csv: "data/processed/sample_apex_enriched.csv"
   dfinfo_csv: "data/processed/dfinfo_apex_enriched.csv"
   predictor_db: "data/database/predictor.db"
+  predictions_csv: "data/processed/predictions.csv"
 
 files:
   ladder_population: "ladder_population.csv"
@@ -41,6 +42,7 @@ model:
 
   test_size: 0.2
   random_state: 42
+  threshold: 0.5
 
 plots:
   figures_dir: "reports/figures"
@@ -49,3 +51,4 @@ artifacts:
   model_dir: "models"
   scaler_name: "scaler.pkl"
   model_name: "logreg_model.pkl"
+

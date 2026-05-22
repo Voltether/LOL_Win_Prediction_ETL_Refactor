@@ -21,6 +21,16 @@ from src.visualization.ml_plots import (
     plot_roc_auc,
 )
 
+from src.config import load_config
+
+config = load_config()
+
+features = config["model"]["features"]
+target = config["model"]["target_column"]
+test_size = config["model"]["test_size"]
+random_state = config["model"]["random_state"]
+threshold = config["model"]["threshold"]
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
